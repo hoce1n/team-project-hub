@@ -1,7 +1,7 @@
 # Team Project Hub — Design Spec
 
 **Date:** 2026-08-30
-**Stack:** Next.js 15 (App Router), TypeScript (strict), Prisma, Postgres 16, Better-Auth, Zod, Tailwind CSS, shadcn/ui, Vitest
+**Stack:** Next.js 16 (App Router, latest stable 16.3.x), TypeScript (strict), Prisma, Postgres 16, Better-Auth, Zod, Tailwind CSS, shadcn/ui, Vitest
 **Goal:** Build a small, cohesive fullstack app ("Team Project Hub") that deliberately exercises every layer of the stack as a learning lab.
 
 ## 1. Purpose
@@ -18,7 +18,7 @@ A learning-first fullstack project. The app is a mini Linear/Notion clone where 
 
 ## 2. Architecture
 
-- Next.js 15 App Router: RSC pages + client components as leaf nodes only.
+- Next.js 16 App Router: RSC pages + client components as leaf nodes only.
 - All mutations via Server Actions; reads via Server Components or RSC data fetching.
 - Realtime via Server-Sent Events (SSE) on a single route. No WebSocket infra.
 - Postgres 16 runs in Docker Compose; Prisma is the data layer.
