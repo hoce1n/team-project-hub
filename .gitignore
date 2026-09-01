@@ -37,9 +37,17 @@ yarn-error.log*
 # user uploads (dev)
 /uploads
 
+# prisma AI skill artifacts
+.agents/
+.claude/
+.windsurf/
+skills-lock.json
+
 # vercel
 .vercel
 
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+/src/generated/prisma
