@@ -45,3 +45,48 @@ export const removeMemberSchema = z.object({
   workspaceId: z.string().cuid(),
   memberId: z.string().cuid(),
 });
+
+export const createProjectSchema = z.object({
+  workspaceId: z.string().cuid(),
+  name: z
+    .string()
+    .trim()
+    .min(1, "Name is required")
+    .max(120, "Name must be 120 characters or fewer"),
+  description: z.string().trim().max(1000, "Keep the description under 1000 characters").optional(),
+});
+
+export const updateProjectSchema = z.object({
+  projectId: z.string().cuid(),
+  name: z
+    .string()
+    .trim()
+    .min(1, "Name is required")
+    .max(120, "Name must be 120 characters or fewer")
+    .optional(),
+  description: z.string().trim().max(1000, "Keep the description under 1000 characters").optional(),
+});
+
+export const createTaskSchema = z.object({
+  projectId: z.string().cuid(),
+  title: z.string().trim().min(1, "Title is required").max(200, "Title must be 200 characters or fewer"),
+  description: z.string().trim().max(2000, "Keep the description under 2000 characters").optional(),
+  status: z.enum(["TODO", "IN_PROGRESS", "DONE"]).default("TODO"),
+  priority: z.enum(["LOW", "MEDIUM", "HIGH"]).default("MEDIUM"),
+  dueDate: z.string().datetime().optional().or(z.literal("")),
+  assigneeId: z.string().cuid().nullable().optional(),
+});
+
+export const updateTaskSchema = z.object({
+  taskId: z.string().cuid(),
+  title: z.string().trim().min(1, "Title is required").max(200, "Title must be 200 characters or fewer").optional(),
+  description: z.string().trim().max(2000, "Keep the description under 2000 characters").optional(),
+  priority: z.enum(["LOW", "MEDIUM", "HIGH"]).optional(),
+  dueDate: z.string().datetime().optional().or(z.literal("")),
+  assigneeId: z.string().cuid().nullable().optional(),
+});
+
+export const setTaskStatusSchema = z.object({
+  taskId: z.string().cuid(),
+  status: z.enum(["TODO", "IN_PROGRESS", "DONE"]),
+});
