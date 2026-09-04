@@ -90,3 +90,12 @@ export const setTaskStatusSchema = z.object({
   taskId: z.string().cuid(),
   status: z.enum(["TODO", "IN_PROGRESS", "DONE"]),
 });
+
+export const createCommentSchema = z.object({
+  taskId: z.string().cuid(),
+  body: z
+    .string()
+    .trim()
+    .min(1, "Comment cannot be empty")
+    .max(2000, "Comments must be 2000 characters or fewer"),
+});

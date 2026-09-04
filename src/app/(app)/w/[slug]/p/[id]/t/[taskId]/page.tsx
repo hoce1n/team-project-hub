@@ -6,6 +6,9 @@ import { prisma } from "@/lib/db";
 import { can } from "@/lib/authz";
 import { TaskEditForm } from "./task-edit-form";
 import { DeleteTaskForm } from "./delete-task-form";
+import { TaskCommentStream } from "./task-comment-stream";
+import type { RenderableComment } from "./task-comment-stream";
+import { NewCommentForm } from "./new-comment-form";
 
 export default async function TaskDetailPage({
   params,
@@ -41,8 +44,25 @@ export default async function TaskDetailPage({
     orderBy: { createdAt: "asc" },
   });
 
+  const comments = await prisma.taskComment.findMany({
+    where: { taskId: task.id },
+    include: { author: { select: { id: true, name: true } } },
+    orderBy: { createdAt: "asc" },
+  });
+
+  const canModerate = can(membership.role, "manageProjects");
+  const renderableComments: RenderableComment[] = comments.map((comment) => ({
+    id: comment.id,
+    taskId: comment.taskId,
+    body: comment.body,
+    authorId: comment.author.id,
+    authorName: comment.author.name ?? comment.author.id,
+    createdAt: comment.createdAt.toISOString(),
+    canDelete: comment.authorId === user.id || canModerate,
+  }));
+
   const canDelete =
-    task.createdById === user.id || can(membership.role, "manageProjects");
+    task.createdById === user.id || canModerate;
 
   return (
     <div className="mx-auto max-w-2xl">
@@ -78,6 +98,21 @@ export default async function TaskDetailPage({
           <DeleteTaskForm taskId={task.id} />
         </div>
       )}
+
+      <section className="mt-8">
+        <h2 className="text-lg font-semibold text-slate-900">
+          Comments ({comments.length})
+        </h2>
+        <div className="mt-4">
+          <TaskCommentStream
+            taskId={task.id}
+            comments={renderableComments}
+          />
+        </div>
+        <div className="mt-4 rounded-xl border border-slate-200 bg-white p-4">
+          <NewCommentForm taskId={task.id} />
+        </div>
+      </section>
     </div>
   );
 }
