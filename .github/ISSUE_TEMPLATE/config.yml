@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Documentation
+    url: https://github.com/hoce1n/team-project-hub/blob/master/README.md
+    about: Read the README for setup and usage guidance.
+  - name: GitHub Discussions
+    url: https://github.com/hoce1n/team-project-hub/discussions
+    about: Ask general questions and discuss ideas.
+  - name: Security policy
+    url: https://github.com/hoce1n/team-project-hub/blob/master/SECURITY.md
+    about: Report a security vulnerability privately. Do not use the public issue tracker.
