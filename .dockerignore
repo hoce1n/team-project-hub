@@ -1,0 +1,33 @@
+# deps / build artifacts
+node_modules
+.next
+build
+coverage
+
+# local env (compose injects its own)
+.env
+.env.local
+.env.*.local
+
+# prisma-generated client (regenerated in the image)
+src/generated/prisma
+
+# user uploads (dev + mounted volume)
+uploads
+
+# tooling / agents
+.agents
+.claude
+.windsurf
+skills-lock.json
+
+# docs/tests not needed in the image
+docs
+tests
+
+# git / misc
+.git
+.gitignore
+*.tsbuildinfo
+.next
+next-env.d.ts

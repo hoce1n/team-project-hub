@@ -31,9 +31,10 @@ The project is also used as a practical environment for learning and applying mo
 
 ## Architecture
 
-The current development environment intentionally does not containerize the Next.js application.
-
-Instead, the application runs directly in WSL while PostgreSQL runs inside Docker.
+The development environment runs the Next.js application directly on the host while
+PostgreSQL runs inside Docker. A fully containerized production-style setup (app
+image + DB) is also provided via Docker Compose. See
+[Full-stack Docker Compose](#full-stack-docker-compose) below.
 
 ```text
 ┌──────────────────────────────┐
@@ -87,6 +88,8 @@ team-project-hub/
 │
 ├── .env
 ├── .env.example
+├── .dockerignore
+├── Dockerfile
 ├── docker-compose.yml
 ├── package.json
 ├── pnpm-lock.yaml
@@ -131,8 +134,11 @@ DATABASE_URL="postgresql://tp_hub:tp_hub_dev@localhost:5432/tp_hub?schema=public
 
 ### 3. Start PostgreSQL
 
+Start only the database (the app service builds a container image, which you do
+not need for host-based development):
+
 ```bash
-docker compose up -d
+docker compose up -d postgres
 ```
 
 Check the service:
@@ -169,12 +175,94 @@ http://localhost:3000
 
 ---
 
-## Docker Commands
+## Full-stack Docker Compose
 
-### Start services
+The application can run fully containerized. Compose defines three services:
+
+| Service    | Image target | Purpose                                              |
+|------------|--------------|------------------------------------------------------|
+| `postgres` | `postgres:16-alpine` | Database with a healthcheck                   |
+| `migrate`  | `builder`    | Runs `prisma migrate deploy`, then exits             |
+| `app`      | `runner`     | Next.js standalone server on port 3000               |
+
+The `migrate` service uses the same multi-stage image build (full dependency
+tree) so the Prisma CLI is available, while the `app` service runs the lean
+standalone output.
+
+### Build and start the full stack
 
 ```bash
-docker compose up -d
+docker compose up -d --build
+```
+
+`app` only starts after `migrate` has finished successfully. The app container
+listens on port 3000 by default; override with `APP_PORT` if the host port is
+taken:
+
+```bash
+APP_PORT=3001 docker compose up -d --build
+```
+
+Check status:
+
+```bash
+docker compose ps
+```
+
+Open the app:
+
+```text
+http://localhost:3000
+```
+
+### Container configuration
+
+The `app` service injects its own `DATABASE_URL` (host `postgres`) and
+`BETTER_AUTH_*` settings, so it does not read the host `.env` file. Override any
+value via environment variables when calling compose:
+
+```bash
+BETTER_AUTH_SECRET=change-me APP_PORT=3000 docker compose up -d --build
+```
+
+`BETTER_AUTH_SECRET` must be at least 32 characters. A development-only default
+is provided for convenience — set a real value for any non-local deployment.
+
+User uploads are persisted in the named volume `tp_hub_uploads` (mounted at
+`/app/uploads` in the container).
+
+### Re-run migrations
+
+`migrate` is idempotent; it exits successfully when the schema is up to date. To
+force it after changing the schema, run:
+
+```bash
+docker compose run --rm migrate
+```
+
+### Stop the full stack
+
+```bash
+docker compose stop
+```
+
+Both named volumes (`tp_hub_pgdata`, `tp_hub_uploads`) are preserved by
+`docker compose down`.
+
+---
+
+## Docker Commands
+
+### Start the full stack (builds the app image)
+
+```bash
+docker compose up -d --build
+```
+
+To run only the database (host-based development):
+
+```bash
+docker compose up -d postgres
 ```
 
 ### Check services
@@ -323,6 +411,17 @@ Docker Compose
 │   ├── Volume: tp_hub_pgdata
 │   └── Healthcheck: pg_isready
 │
+├── migrate
+│   └── Image: team-project-hub (builder target)
+│       └── Runs: prisma migrate deploy, then exits
+│
+├── app
+│   ├── Image: team-project-hub (runner target, standalone)
+│   ├── Container: tp-hub-app
+│   ├── Port: 3000
+│   ├── Volume: tp_hub_uploads → /app/uploads
+│   └── Depends on: migrate (service_completed_successfully)
+│
 └── Network
     └── team-project-hub_default
 ```
@@ -339,10 +438,10 @@ Docker Compose
 * [x] Connect WSL application to Docker PostgreSQL
 * [x] Verify Prisma migrations
 * [x] Verify authentication against the database
-* [ ] Add application Dockerfile
-* [ ] Containerize Next.js
-* [ ] Multi-stage production build
-* [ ] Production-oriented Docker Compose setup
+* [x] Add application Dockerfile
+* [x] Containerize Next.js
+* [x] Multi-stage production build
+* [x] Production-oriented Docker Compose setup
 
 ### Application
 
