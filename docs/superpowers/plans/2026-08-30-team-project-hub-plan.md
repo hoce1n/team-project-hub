@@ -145,17 +145,30 @@
 
 ## Phase 7 — Tests & Smoke
 
+> **Status: done.** Smoke was implemented as a Vitest integration suite
+> (`tests/smoke/actions.smoke.test.ts`, `pnpm smoke`) rather than a standalone
+> script, because replaying Next.js Server Action transports over raw HTTP is
+> brittle (bound args reference the RSC flight stream). The suite mocks
+> `next/headers`/`next/navigation`/`next/cache` and drives the real action
+> functions in-process against the real Postgres DB, which exercises the full
+> action code path (session, Zod, authz, persistence, uploads) minus only the
+> HTTP transport.
+
 ### 7.1 Unit tests (Vitest)
 - Steps:
   1. `authz.test.ts` (role matrix, already in 3.1)
-  2. Schema tests: valid/invalid payloads for each action's Zod schema
+  2. `validations.test.ts`: valid/invalid payloads for each action's Zod schema
+  3. `comment-stream.test.ts`: hub subscribe/publish/unsubscribe
 - Verify: `pnpm test` green.
 
-### 7.2 Smoke script
+### 7.2 Smoke suite
 - Steps:
-  1. `scripts/smoke.ts`: with a seeded DB, run: signup, create workspace, invite member, create project/task, add comment, upload attachment — assert each succeeds
-  2. Wire as `pnpm smoke`
-- Verify: `pnpm smoke` exits 0 against fresh DB.
+  1. `tests/smoke/actions.smoke.test.ts`: with a seeded DB, run: signup → create
+     workspace → join → promote role → create project/task → add comment →
+     upload attachment → assert each persists and unauthorized actors are
+     rejected; also assert an unauthenticated actor redirects to `/login`
+  2. Wired as `pnpm smoke` (runs the `tests/smoke` Vitest project)
+- Verify: `pnpm smoke` exits 0 against a running Postgres DB.
 
 ## Phase 8 — Docker stretch goal
 

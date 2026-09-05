@@ -9,6 +9,7 @@ import { DeleteTaskForm } from "./delete-task-form";
 import { TaskCommentStream } from "./task-comment-stream";
 import type { RenderableComment } from "./task-comment-stream";
 import { NewCommentForm } from "./new-comment-form";
+import { AttachmentUploadForm } from "./attachment-upload-form";
 
 export default async function TaskDetailPage({
   params,
@@ -47,6 +48,12 @@ export default async function TaskDetailPage({
   const comments = await prisma.taskComment.findMany({
     where: { taskId: task.id },
     include: { author: { select: { id: true, name: true } } },
+    orderBy: { createdAt: "asc" },
+  });
+
+  const attachments = await prisma.attachment.findMany({
+    where: { taskId: task.id },
+    include: { uploadedBy: { select: { name: true } } },
     orderBy: { createdAt: "asc" },
   });
 
@@ -98,6 +105,40 @@ export default async function TaskDetailPage({
           <DeleteTaskForm taskId={task.id} />
         </div>
       )}
+
+      <section className="mt-8">
+        <h2 className="text-lg font-semibold text-slate-900">Attachments</h2>
+        {attachments.length > 0 && (
+          <ul className="mt-3 space-y-2">
+            {attachments.map((attachment) => (
+              <li
+                key={attachment.id}
+                className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm"
+              >
+                {attachment.storedName ? (
+                  <a
+                    href={`/api/attachments/${attachment.id}`}
+                    className="font-medium text-slate-900 underline"
+                  >
+                    {attachment.filename}
+                  </a>
+                ) : (
+                  <span className="font-medium text-slate-500">
+                    {attachment.filename}
+                  </span>
+                )}
+                <span className="text-xs text-slate-400">
+                  {(attachment.size / 1024).toFixed(1)} KB ·{" "}
+                  {attachment.uploadedBy.name ?? "Unknown"}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+        <div className="mt-3 rounded-xl border border-slate-200 bg-white p-4">
+          <AttachmentUploadForm taskId={task.id} />
+        </div>
+      </section>
 
       <section className="mt-8">
         <h2 className="text-lg font-semibold text-slate-900">

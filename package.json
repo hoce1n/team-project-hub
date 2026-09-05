@@ -7,8 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "vitest run",
-    "smoke": "tsx scripts/smoke.ts",
+    "test": "vitest run src",
+    "smoke": "vitest run tests/smoke",
     "seed": "tsx prisma/seed.ts",
     "setup:dev": "docker compose up -d postgres && prisma migrate dev && pnpm seed && pnpm dev"
   },
