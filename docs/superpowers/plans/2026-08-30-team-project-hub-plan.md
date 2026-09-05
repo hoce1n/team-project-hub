@@ -172,11 +172,27 @@
 
 ## Phase 8 — Docker stretch goal
 
+> **Status: done.** `output: "standalone"` is env-gated (`NEXT_STANDALONE=1`) so
+> host-based `pnpm build && pnpm start` still works unchanged.
+
 ### 8.1 App container
 - Steps:
-  1. Multi-stage `Dockerfile` (deps → builder → runner, standalone output)
-  2. Add `app` service to `docker-compose.yml`; env wiring; depends_on postgres health
-- Verify: `docker compose up` boots full stack; app responds on configured port.
+  1. Multi-stage `Dockerfile` (`deps` → `builder` → `runner`). `deps` installs
+     the full lockfile (dev tools included, since the Prisma CLI runs
+     migrations); `builder` runs `prisma generate` + `next build` with
+     `NEXT_STANDALONE=1`; `runner` is a slim Node image running the standalone
+     `server.js` as the non-root `nextjs` user (uploads dir pre-created).
+  2. `docker-compose.yml` adds two services: `migrate` (builds the `builder`
+     target, runs `prisma migrate deploy`, exits) and `app` (builds the `runner`
+     target) with `depends_on: migrate: condition: service_completed_successfully`,
+     env wiring for `DATABASE_URL`/`BETTER_AUTH_*` against the `postgres`
+     service, a `tp_hub_uploads` volume at `/app/uploads`, and a `/login`
+     healthcheck. `.dockerignore` keeps the context lean.
+- Verify: `docker compose up -d --build` boots `postgres` (healthy) → `migrate`
+  (exit 0, "No pending migrations to apply") → `app` (healthy). Runtime check
+  over HTTP on the container passed: `/` redirects to `/login`, email/password
+  signup inserts a user and sets the session cookie, and `/dashboard` renders
+  server-side from Postgres; `/app/uploads` is writable by uid 1001.
 
 ---
 
