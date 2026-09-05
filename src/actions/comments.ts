@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/session";
 import { can } from "@/lib/authz";
-import { getTaskAccess } from "@/lib/membership";
+import { getTaskAccess, getWorkspaceSlug } from "@/lib/membership";
 import { createCommentSchema } from "@/lib/validations";
 import { publishComment } from "@/lib/comment-stream";
 
@@ -41,7 +41,10 @@ export async function createCommentAction(
     createdAt: comment.createdAt.toISOString(),
   });
 
-  revalidatePath(`/w/[slug]/p/${access.project.id}/t/${parsed.data.taskId}`);
+  const slug = await getWorkspaceSlug(access.project.workspaceId);
+  if (slug) {
+    revalidatePath(`/w/${slug}/p/${access.project.id}/t/${parsed.data.taskId}`);
+  }
   return undefined;
 }
 
@@ -67,5 +70,8 @@ export async function deleteCommentAction(formData: FormData) {
   }
 
   await prisma.taskComment.delete({ where: { id: commentId } });
-  revalidatePath(`/w/[slug]/p/${access.project.id}/t/${comment.taskId}`);
+  const slug = await getWorkspaceSlug(access.project.workspaceId);
+  if (slug) {
+    revalidatePath(`/w/${slug}/p/${access.project.id}/t/${comment.taskId}`);
+  }
 }

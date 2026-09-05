@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/session";
 import { can } from "@/lib/authz";
-import { getMembership, getProjectAccess } from "@/lib/membership";
+import { getMembership, getProjectAccess, getWorkspaceSlug } from "@/lib/membership";
 import { createProjectSchema, updateProjectSchema } from "@/lib/validations";
 
 type ActionState = { error?: string } | undefined;
@@ -67,7 +67,10 @@ export async function renameProjectAction(
     where: { id: parsed.data.projectId },
     data: { name: parsed.data.name },
   });
-  revalidatePath(`/w/${access.project.workspaceId}`);
+  const slug = await getWorkspaceSlug(access.project.workspaceId);
+  if (slug) {
+    revalidatePath(`/w/${slug}`);
+  }
   return undefined;
 }
 

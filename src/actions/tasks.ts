@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/session";
 import { can } from "@/lib/authz";
-import { getProjectAccess, getTaskAccess } from "@/lib/membership";
+import { getProjectAccess, getTaskAccess, getWorkspaceSlug } from "@/lib/membership";
 import {
   createTaskSchema,
   updateTaskSchema,
@@ -55,8 +55,10 @@ export async function createTaskAction(
       createdById: user.id,
     },
   });
-  revalidatePath(`/w/[slug]/p/${projectId}`);
-  revalidatePath(`/w/[slug]`, "page");
+  const slug = await getWorkspaceSlug(access.project.workspaceId);
+  if (slug) {
+    revalidatePath(`/w/${slug}/p/${projectId}`);
+  }
   return undefined;
 }
 
@@ -91,9 +93,11 @@ export async function updateTaskAction(
       assigneeId: data.assigneeId || null,
     },
   });
-  revalidatePath(`/w/[slug]/p/${access.project.id}`);
-  revalidatePath(`/w/[slug]/p/${access.project.id}/t/${taskId}`);
-  revalidatePath(`/w/[slug]`, "page");
+  const slug = await getWorkspaceSlug(access.project.workspaceId);
+  if (slug) {
+    revalidatePath(`/w/${slug}/p/${access.project.id}`);
+    revalidatePath(`/w/${slug}/p/${access.project.id}/t/${taskId}`);
+  }
   return undefined;
 }
 
@@ -119,9 +123,11 @@ export async function setTaskStatusAction(
     where: { id: parsed.data.taskId },
     data: { status: parsed.data.status as TaskStatus },
   });
-  revalidatePath(`/w/[slug]/p/${access.project.id}`);
-  revalidatePath(`/w/[slug]/p/${access.project.id}/t/${parsed.data.taskId}`);
-  revalidatePath(`/w/[slug]`, "page");
+  const slug = await getWorkspaceSlug(access.project.workspaceId);
+  if (slug) {
+    revalidatePath(`/w/${slug}/p/${access.project.id}`);
+    revalidatePath(`/w/${slug}/p/${access.project.id}/t/${parsed.data.taskId}`);
+  }
   return undefined;
 }
 

@@ -6,7 +6,7 @@ import { mkdir, writeFile } from "node:fs/promises";
 import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/session";
 import { can } from "@/lib/authz";
-import { getTaskAccess } from "@/lib/membership";
+import { getTaskAccess, getWorkspaceSlug } from "@/lib/membership";
 import { z } from "zod";
 import {
   UPLOAD_ROOT,
@@ -67,6 +67,9 @@ export async function addAttachmentAction(
     },
   });
 
-  revalidatePath(`/w/[slug]/p/[projectId]/t/${taskId}`);
+  const slug = await getWorkspaceSlug(access.project.workspaceId);
+  if (slug) {
+    revalidatePath(`/w/${slug}/p/${access.project.id}/t/${taskId}`);
+  }
   return { ok: true };
 }

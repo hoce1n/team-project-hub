@@ -46,6 +46,14 @@ export async function getWorkspaceBySlug(
   return prisma.workspace.findUnique({ where: { slug } });
 }
 
+export async function getWorkspaceSlug(
+  workspaceId: string,
+): Promise<string | null> {
+  return prisma.workspace
+    .findUnique({ where: { id: workspaceId }, select: { slug: true } })
+    .then((workspace) => workspace?.slug ?? null);
+}
+
 export async function getProjectAccess(
   userId: string,
   projectId: string,
